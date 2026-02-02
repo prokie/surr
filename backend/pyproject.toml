@@ -11,6 +11,8 @@ dependencies = [
     "alembic>=1.18.3",
     "asyncpg>=0.31.0",
     "fastapi[all]>=0.128.0",
+    "pwdlib>=0.3.0",
+    "pyjwt>=2.11.0",
     "uvicorn>=0.40.0",
 ]
 
