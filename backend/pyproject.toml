@@ -1,0 +1,41 @@
+[project]
+name = "surr"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Pontus", email = "36114799+prokie@users.noreply.github.com" },
+]
+requires-python = ">=3.14"
+dependencies = [
+    "alembic>=1.18.3",
+    "asyncpg>=0.31.0",
+    "fastapi[all]>=0.128.0",
+    "uvicorn>=0.40.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.14",
+    "ty>=0.0.14",
+]
+
+
+[tool.ruff.lint]
+select = ["ALL"]
+fixable = ["ALL"]
+preview = true
+ignore = [
+    "ANN204",
+    "COM812",
+    "D",
+    "TC001",
+    "TC002",
+    "BLE001",
+    "CPY",
+    "RUF067",
+]
