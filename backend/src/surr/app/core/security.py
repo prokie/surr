@@ -17,6 +17,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 class TokenType(StrEnum):
     ACCESS = "access"
     REFRESH = "refresh"
+    BEARER = "bearer"
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
