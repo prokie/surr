@@ -4,6 +4,7 @@ from sqlalchemy import select
 from surr.app.core.security import (
     REFRESH_TOKEN_EXPIRE_DAYS,
     TokenType,
+    blacklist_tokens,
     create_token,
     verify_password,
 )
@@ -47,3 +48,15 @@ class LoginUser:
             max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
         )
         return Token(access_token=access_token, token_type=TokenType.BEARER)
+
+
+class LogoutUser:
+    def __init__(self, session: SessionFactory):
+        self.session = session
+
+    async def execute(
+        self, access_token: str, refresh_token: str | None, response: Response
+    ) -> None:
+        async with self.session() as db:
+            await blacklist_tokens(access_token, refresh_token, db)
+        response.delete_cookie(key="refresh_token", httponly=True, samesite="lax")

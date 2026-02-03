@@ -1,3 +1,4 @@
+import contextlib
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any
@@ -63,3 +64,13 @@ async def blacklist_token(token: str, session: AsyncSession) -> None:
 
         await TokenBlacklist.create(session, token=token, expires_at=expires_at)
         await session.commit()
+
+
+async def blacklist_tokens(
+    access_token: str, refresh_token: str | None, session: AsyncSession
+) -> None:
+    await blacklist_token(token=access_token, session=session)
+
+    if refresh_token:
+        with contextlib.suppress(Exception):
+            await blacklist_token(token=refresh_token, session=session)
