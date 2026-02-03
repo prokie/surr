@@ -31,6 +31,11 @@ def get_password_hash(password: str) -> str:
 def create_token(
     data: dict[str, Any], token_type: TokenType, expires_delta: timedelta | None = None
 ) -> str:
+
+    if "sub" not in data or not data["sub"]:
+        msg = "JWT payload must include a non-empty 'sub' (subject) claim"
+        raise ValueError(msg)
+
     to_encode = data.copy()
 
     if expires_delta:
