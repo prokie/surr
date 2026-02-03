@@ -29,4 +29,4 @@ async def get_session() -> AsyncIterator[async_sessionmaker]:
         raise
 
 
-AsyncSession = Annotated[async_sessionmaker, Depends(get_session)]
+SessionFactory = Annotated[async_sessionmaker, Depends(get_session)]

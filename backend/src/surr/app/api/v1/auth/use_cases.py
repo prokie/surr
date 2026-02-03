@@ -8,13 +8,13 @@ from surr.app.core.security import (
     verify_password,
 )
 from surr.app.models.user import User
-from surr.database import AsyncSession
+from surr.database import SessionFactory
 
 from .schema import Token
 
 
 class LoginUser:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: SessionFactory):
         self.session = session
 
     async def execute(self, username: str, password: str, response: Response) -> Token:
