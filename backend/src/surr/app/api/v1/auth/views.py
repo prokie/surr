@@ -26,7 +26,7 @@ async def logout(
     response: Response,
     use_case: Annotated[LogoutUser, Depends(LogoutUser)],
     access_token: Annotated[str, Depends(oauth2_scheme)],
-    refresh_token: Annotated[str | None, Cookie(default=None, alias="refresh_token")],
+    refresh_token: Annotated[str | None, Cookie(alias="refresh_token")] = None,
 ) -> dict[str, str]:
     return await use_case.execute(access_token, refresh_token, response)
 
