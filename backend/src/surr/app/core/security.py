@@ -4,13 +4,17 @@ from enum import StrEnum
 from typing import Any
 
 import jwt
+from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from surr.app.core.config import settings
 from surr.app.models.token_blacklist import TokenBlacklist
 
 password_hash = PasswordHash.recommended()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
 SECRET_KEY = settings.SECRET_KEY.get_secret_value()
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -21,6 +25,10 @@ class TokenType(StrEnum):
     ACCESS = "access"
     REFRESH = "refresh"
     BEARER = "bearer"
+
+
+class TokenData(BaseModel):
+    username: str
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -74,3 +82,18 @@ async def blacklist_tokens(
     if refresh_token:
         with contextlib.suppress(Exception):
             await blacklist_token(token=refresh_token, session=session)
+
+
+def verify_token(token: str, expected_token_type: TokenType) -> TokenData | None:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str | None = payload.get("sub")
+        token_type: str | None = payload.get("token_type")
+
+        if username is None or token_type != expected_token_type:
+            return None
+
+        return TokenData(username=username)
+
+    except jwt.PyJWTError:
+        return None

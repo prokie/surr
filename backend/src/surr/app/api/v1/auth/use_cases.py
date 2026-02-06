@@ -1,13 +1,16 @@
-from fastapi import HTTPException, Response, status
+from fastapi import HTTPException, Request, Response, status
 from sqlalchemy import select
 
 from surr.app.core.security import (
     REFRESH_TOKEN_EXPIRE_DAYS,
     TokenType,
+    blacklist_token,
     blacklist_tokens,
     create_token,
     verify_password,
+    verify_token,
 )
+from surr.app.models import TokenBlacklist
 from surr.app.models.user import User
 from surr.database import SessionFactory
 
@@ -56,7 +59,65 @@ class LogoutUser:
 
     async def execute(
         self, access_token: str, refresh_token: str | None, response: Response
-    ) -> None:
+    ) -> dict[str, str]:
         async with self.session() as db:
             await blacklist_tokens(access_token, refresh_token, db)
         response.delete_cookie(key="refresh_token", httponly=True, samesite="lax")
+
+        return {"message": "Successfully logged out"}
+
+
+class RefreshAccessToken:
+    def __init__(self, session: SessionFactory):
+        self.session = session
+
+    async def execute(self, request: Request, response: Response) -> Token:
+        refresh_token = request.cookies.get("refresh_token")
+        if not refresh_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token missing"
+            )
+
+        token_data = verify_token(refresh_token, TokenType.REFRESH)
+        if not token_data or not token_data.username:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+            )
+
+        stmt = select(User).where(User.username == token_data.username)
+
+        async with self.session() as db:
+            if await TokenBlacklist.exists(db, refresh_token):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token has been blacklisted",
+                )
+
+            result = await db.execute(stmt)
+            user = result.scalar_one_or_none()
+
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+                )
+
+            await blacklist_token(refresh_token, db)
+            await db.commit()
+
+        new_access_token = create_token(
+            data={"sub": user.username}, token_type=TokenType.ACCESS
+        )
+        new_refresh_token = create_token(
+            data={"sub": user.username}, token_type=TokenType.REFRESH
+        )
+
+        # 6. Set new cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=new_refresh_token,
+            httponly=True,
+            samesite="lax",
+            max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        )
+
+        return Token(access_token=new_access_token, token_type=TokenType.BEARER)

@@ -43,3 +43,9 @@ class TokenBlacklist(Base):
             msg = "TokenBlacklist creation failed"
             raise RuntimeError(msg)
         return new
+
+    @classmethod
+    async def exists(cls, session: AsyncSession, token: str) -> bool:
+        stmt = select(cls).where(cls.token == token)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none() is not None
