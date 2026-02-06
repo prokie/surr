@@ -1,5 +1,5 @@
 import logging
-from collections.abc import AsyncIterator  # noqa: TC003
+from collections.abc import Iterator  # noqa: TC003
 from typing import Annotated
 
 from fastapi import Depends
@@ -21,7 +21,7 @@ engine = create_async_engine(
 AsyncSessionLocal = async_sessionmaker(bind=engine, autoflush=False, future=True)
 
 
-async def get_session() -> AsyncIterator[async_sessionmaker]:
+def get_session() -> Iterator[async_sessionmaker]:
     try:
         yield AsyncSessionLocal
     except SQLAlchemyError:
