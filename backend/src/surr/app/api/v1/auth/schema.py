@@ -3,7 +3,8 @@ from pydantic import BaseModel, Field
 from surr.app.schema.user import UserBase
 
 
-class UserRead(UserBase): ...
+class UserRead(UserBase):
+    id: int
 
 
 class UserCreate(UserBase):

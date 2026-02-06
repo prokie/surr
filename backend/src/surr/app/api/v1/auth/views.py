@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, Request, Response
+from fastapi import APIRouter, Cookie, Depends, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from surr.app.api.v1.auth.use_cases import RefreshAccessToken
 from surr.app.core.security import oauth2_scheme
 
-from .schema import Token
-from .use_cases import LoginUser, LogoutUser
+from .schema import Token, UserCreate, UserRead
+from .use_cases import LoginUser, LogoutUser, RegisterUser
 
 router = APIRouter(prefix="/auth")
 
@@ -38,3 +38,11 @@ async def refresh_access_token(
     use_case: Annotated[RefreshAccessToken, Depends(RefreshAccessToken)],
 ) -> Token:
     return await use_case.execute(request, response)
+
+
+@router.post("/signup", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+async def register(
+    user_in: UserCreate,
+    use_case: Annotated[RegisterUser, Depends(RegisterUser)],
+) -> UserRead:
+    return await use_case.execute(user_in)
