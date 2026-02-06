@@ -27,6 +27,10 @@ dev = [
 ]
 
 
+[tool.ruff]
+extend-exclude = ["src/surr/alembic/versions"]
+
+
 [tool.ruff.lint]
 select = ["ALL"]
 fixable = ["ALL"]
