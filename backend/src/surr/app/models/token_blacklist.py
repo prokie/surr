@@ -4,6 +4,8 @@ from sqlalchemy import DateTime, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
+from surr.app.exceptions.token_blacklist import TokenBlacklistCreationError
+
 from .base import Base
 
 
@@ -41,7 +43,7 @@ class TokenBlacklist(Base):
         new = await cls.read_by_id(session, blacklist_entry.id)
         if not new:
             msg = "TokenBlacklist creation failed"
-            raise RuntimeError(msg)
+            raise TokenBlacklistCreationError(msg)
         return new
 
     @classmethod

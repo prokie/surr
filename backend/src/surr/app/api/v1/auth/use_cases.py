@@ -7,6 +7,7 @@ from surr.app.core.security import (
     blacklist_token,
     blacklist_tokens,
     create_token,
+    get_password_hash,
     verify_password,
     verify_token,
 )
@@ -15,6 +16,10 @@ from surr.app.models.user import User
 from surr.database import SessionFactory
 
 from .schema import Token
+
+# We verify against this when the user is not found to simulate the
+# computational time of a real password check, mitigating timing attacks.
+DUMMY_HASH = get_password_hash("dummy_password_for_timing_protection")
 
 
 class LoginUser:
@@ -28,14 +33,15 @@ class LoginUser:
             result = await db.execute(stmt)
             user = result.scalar_one_or_none()
 
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
-            )
+        # To prevent timing attacks, we always verify the password.
+        # If the user exists, we use their hash. If not, we use the dummy hash.
+        target_hash = user.hashed_password if user else DUMMY_HASH
+        is_password_valid = verify_password(password, target_hash)
 
-        if not verify_password(password, user.hashed_password):
+        if not user or not is_password_valid:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
             )
 
         access_token = create_token(

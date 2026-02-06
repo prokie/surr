@@ -27,8 +27,10 @@ class User(Base):
         return await session.scalar(stmt)
 
     @classmethod
-    async def create(cls, session: AsyncSession, username: str, password: str) -> User:
-        user = User(username=username, hashed_password=password)
+    async def create(
+        cls, session: AsyncSession, username: str, hashed_password: str
+    ) -> User:
+        user = User(username=username, hashed_password=hashed_password)
         session.add(user)
         await session.flush()
 

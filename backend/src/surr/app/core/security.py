@@ -64,14 +64,19 @@ def create_token(
 
 
 async def blacklist_token(token: str, session: AsyncSession) -> None:
+    if await TokenBlacklist.exists(session, token):
+        return
+
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     exp = payload.get("exp")
 
-    if exp is not None:
-        expires_at = datetime.fromtimestamp(exp, UTC)
+    if exp is None:
+        msg = "Cannot blacklist token without an expiration ('exp') claim"
+        raise ValueError(msg)
 
-        await TokenBlacklist.create(session, token=token, expires_at=expires_at)
-        await session.commit()
+    expires_at = datetime.fromtimestamp(exp, UTC)
+    await TokenBlacklist.create(session, token=token, expires_at=expires_at)
+    await session.commit()
 
 
 async def blacklist_tokens(
@@ -80,7 +85,7 @@ async def blacklist_tokens(
     await blacklist_token(token=access_token, session=session)
 
     if refresh_token:
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(jwt.PyJWTError):
             await blacklist_token(token=refresh_token, session=session)
 
 
