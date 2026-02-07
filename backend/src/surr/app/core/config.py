@@ -1,4 +1,4 @@
-from pydantic import SecretStr, computed_field
+from pydantic import SecretStr, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,6 +16,15 @@ class CryptSettings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def secret_key_must_be_at_least_32_chars(cls, value: SecretStr) -> SecretStr:
+        secret = value.get_secret_value()
+        if len(secret) < 32:  # noqa: PLR2004
+            msg = "SECRET_KEY must be at least 32 characters long"
+            raise ValueError(msg)
+        return value
 
 
 class CORSSettings(BaseSettings):
