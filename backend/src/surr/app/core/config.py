@@ -12,7 +12,7 @@ class AppSettings(BaseSettings):
 
 
 class CryptSettings(BaseSettings):
-    SECRET_KEY: SecretStr = SecretStr("secret-key")
+    SECRET_KEY: SecretStr = SecretStr("dev-insecure-secret-key-please-change-32b")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
