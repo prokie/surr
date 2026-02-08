@@ -1,10 +1,15 @@
+import asyncio
+import logging
+from collections.abc import Coroutine
 from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, Request, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from surr.app.models.rate_limit import RateLimit
-from surr.database import SessionFactory
+from surr.database import AsyncSessionLocal, SessionFactory
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseRateLimiter:
@@ -40,3 +45,18 @@ class DatabaseRateLimiter:
                         detail="Too many requests. Please try again later.",
                     )
                 record.count += 1
+
+
+async def delete_expired_rate_limits() -> Coroutine:
+    """Background task to cleanup expired rate limit rows."""
+    while True:
+        try:
+            await asyncio.sleep(600)
+
+            async with AsyncSessionLocal() as db, db.begin():
+                stmt = delete(RateLimit).where(RateLimit.reset_at < datetime.now(UTC))
+                await db.execute(stmt)
+
+        except Exception:
+            logger.exception("Error cleaning rate limits")
+            await asyncio.sleep(60)
