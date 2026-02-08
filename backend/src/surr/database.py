@@ -12,9 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 engine = create_async_engine(
-    f"postgresql+asyncpg://{settings.POSTGRES_URI}",
-    echo=False,
-    pool_pre_ping=True,
+    settings.POSTGRES_ASYNC_URI, echo=False, pool_pre_ping=True
 )
 
 

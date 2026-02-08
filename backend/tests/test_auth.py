@@ -1,5 +1,6 @@
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from surr.app.core.security import get_password_hash
@@ -11,7 +12,7 @@ async def test_login_success(client: AsyncClient, db_session: AsyncSession) -> N
     hashed_pw = get_password_hash("securepassword")
     user = User(username="testuser", hashed_password=hashed_pw)
     db_session.add(user)
-    await db_session.commit()
+    await db_session.flush()
 
     response = await client.post(
         "/api/auth/login",
@@ -32,7 +33,7 @@ async def test_login_wrong_password(
     hashed_pw = get_password_hash("securepassword")
     user = User(username="testuser", hashed_password=hashed_pw)
     db_session.add(user)
-    await db_session.commit()
+    await db_session.flush()
 
     response = await client.post(
         "/api/auth/login",
@@ -41,3 +42,22 @@ async def test_login_wrong_password(
     )
 
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_signup_success(client: AsyncClient, db_session: AsyncSession) -> None:
+    payload = {"username": "newuser", "password": "securepassword123"}
+
+    response = await client.post("/api/auth/signup", json=payload)
+
+    assert response.status_code == 201
+    data = response.json()
+    assert "id" in data
+    assert data["username"] == payload["username"]
+    assert "password" not in data
+
+    # Verify user was actually created in DB
+    stmt = select(User).where(User.username == payload["username"])
+    result = await db_session.execute(stmt)
+    user = result.scalar_one_or_none()
+    assert user is not None

@@ -46,7 +46,9 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession]:
     connection = await db_engine.connect()
     transaction = await connection.begin()
 
-    session_factory = async_sessionmaker(bind=connection, expire_on_commit=False)
+    session_factory = async_sessionmaker(
+        bind=connection, expire_on_commit=False, autoflush=False
+    )
     session = session_factory()
 
     yield session

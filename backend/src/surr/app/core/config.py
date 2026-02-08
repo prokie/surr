@@ -55,6 +55,11 @@ class PostgresSettings(BaseSettings):
         location = f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         return f"{credentials}@{location}"
 
+    @computed_field
+    @property
+    def POSTGRES_ASYNC_URI(self) -> str:  # noqa: N802
+        return f"{self.POSTGRES_ASYNC_PREFIX}{self.POSTGRES_URI}"
+
 
 class Settings(
     AppSettings,
