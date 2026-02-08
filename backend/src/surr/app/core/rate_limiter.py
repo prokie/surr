@@ -1,13 +1,16 @@
 import asyncio
 import logging
-from collections.abc import Coroutine
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy import delete, select
 
 from surr.app.models.rate_limit import RateLimit
 from surr.database import AsyncSessionLocal, SessionFactory
+
+if TYPE_CHECKING:
+    from collections.abc import Coroutine
 
 logger = logging.getLogger(__name__)
 
