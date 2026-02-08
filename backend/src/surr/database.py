@@ -16,7 +16,7 @@ engine = create_async_engine(
 )
 
 
-AsyncSessionLocal = async_sessionmaker(bind=engine, autoflush=False, future=True)
+AsyncSessionLocal = async_sessionmaker(bind=engine, autoflush=False)
 
 
 def get_session() -> Iterator[async_sessionmaker]:
