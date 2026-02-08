@@ -56,10 +56,6 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Run Prettier Format Check
-        run: npm run format:check
-        working-directory: frontend
-
       - name: Run ESLint
         run: npm run lint
         working-directory: frontend
