@@ -1,5 +1,6 @@
 from fastapi import HTTPException, Request, Response, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from surr.app.core.security import (
     REFRESH_TOKEN_EXPIRE_DAYS,
@@ -15,7 +16,7 @@ from surr.app.models import TokenBlacklist
 from surr.app.models.user import User
 from surr.database import SessionFactory
 
-from .schema import Token
+from .schema import Token, UserCreate, UserRead
 
 # We verify against this when the user is not found to simulate the
 # computational time of a real password check, mitigating timing attacks.
@@ -117,7 +118,6 @@ class RefreshAccessToken:
             data={"sub": user.username}, token_type=TokenType.REFRESH
         )
 
-        # 6. Set new cookie
         response.set_cookie(
             key="refresh_token",
             value=new_refresh_token,
@@ -127,3 +127,29 @@ class RefreshAccessToken:
         )
 
         return Token(access_token=new_access_token, token_type=TokenType.BEARER)
+
+
+class RegisterUser:
+    def __init__(self, session: SessionFactory):
+        self.session = session
+
+    async def execute(self, user_in: UserCreate) -> UserRead:
+        hashed_password = get_password_hash(user_in.password)
+
+        async with self.session() as db:
+            try:
+                user = await User.create(
+                    session=db,
+                    username=user_in.username,
+                    hashed_password=hashed_password,
+                )
+                await db.commit()
+
+                return UserRead(id=user.id, username=user.username)
+
+            except IntegrityError as err:
+                await db.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Username already taken",
+                ) from err

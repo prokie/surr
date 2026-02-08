@@ -1,4 +1,4 @@
-from pydantic import SecretStr, computed_field
+from pydantic import SecretStr, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,10 +12,19 @@ class AppSettings(BaseSettings):
 
 
 class CryptSettings(BaseSettings):
-    SECRET_KEY: SecretStr = SecretStr("secret-key")
+    SECRET_KEY: SecretStr = SecretStr("dev-insecure-secret-key-please-change-32b")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def secret_key_must_be_at_least_32_chars(cls, value: SecretStr) -> SecretStr:
+        secret = value.get_secret_value()
+        if len(secret) < 32:  # noqa: PLR2004
+            msg = "SECRET_KEY must be at least 32 characters long"
+            raise ValueError(msg)
+        return value
 
 
 class CORSSettings(BaseSettings):
@@ -45,6 +54,11 @@ class PostgresSettings(BaseSettings):
         credentials = f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
         location = f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         return f"{credentials}@{location}"
+
+    @computed_field
+    @property
+    def POSTGRES_ASYNC_URI(self) -> str:  # noqa: N802
+        return f"{self.POSTGRES_ASYNC_PREFIX}{self.POSTGRES_URI}"
 
 
 class Settings(

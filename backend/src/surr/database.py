@@ -12,13 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 engine = create_async_engine(
-    f"postgresql+asyncpg://{settings.POSTGRES_URI}",
-    echo=False,
-    pool_pre_ping=True,
+    settings.POSTGRES_ASYNC_URI, echo=False, pool_pre_ping=True
 )
 
 
-AsyncSessionLocal = async_sessionmaker(bind=engine, autoflush=False, future=True)
+AsyncSessionLocal = async_sessionmaker(bind=engine, autoflush=False)
 
 
 def get_session() -> Iterator[async_sessionmaker]:
