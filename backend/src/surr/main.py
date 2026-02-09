@@ -1,10 +1,30 @@
+import asyncio
+from contextlib import asynccontextmanager, suppress
+from typing import TYPE_CHECKING
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from surr.app.api.main import router as api_router
 from surr.app.core.config import settings
+from surr.app.core.rate_limiter import delete_expired_rate_limits
 
-app = FastAPI()
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    task = asyncio.create_task(delete_expired_rate_limits())
+
+    yield
+
+    task.cancel()
+    with suppress(asyncio.CancelledError):
+        await task
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 app.add_middleware(
