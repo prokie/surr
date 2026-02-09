@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy import delete, select
@@ -9,9 +8,6 @@ from sqlalchemy.exc import IntegrityError
 
 from surr.app.models.rate_limit import RateLimit
 from surr.database import AsyncSessionLocal, SessionFactory
-
-if TYPE_CHECKING:
-    from collections.abc import Coroutine
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +68,7 @@ class DatabaseRateLimiter:
                 return
 
 
-async def delete_expired_rate_limits() -> Coroutine:
+async def delete_expired_rate_limits() -> None:
     """Background task to cleanup expired rate limit rows."""
     while True:
         try:
