@@ -61,3 +61,21 @@ async def test_signup_success(client: AsyncClient, db_session: AsyncSession) -> 
     result = await db_session.execute(stmt)
     user = result.scalar_one_or_none()
     assert user is not None
+
+
+@pytest.mark.asyncio
+async def test_signup_rate_limit(client: AsyncClient) -> None:
+    payload = {"username": "spammer", "password": "password123"}
+
+    # Send 5 allowed requests (assuming limit is 5)
+    for i in range(5):
+        payload["username"] = f"spammer_{i}"
+        response = await client.post("/api/auth/signup", json=payload)
+        assert response.status_code == 201
+
+    # Send 6th request - should fail
+    payload["username"] = "spammer_blocked"
+    response = await client.post("/api/auth/signup", json=payload)
+
+    assert response.status_code == 429
+    assert "Too many requests" in response.json()["detail"]

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Cookie, Depends, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from surr.app.api.v1.auth.use_cases import RefreshAccessToken
+from surr.app.core.rate_limiter import DatabaseRateLimiter
 from surr.app.core.security import oauth2_scheme
 
 from .schema import Token, UserCreate, UserRead
@@ -44,5 +45,6 @@ async def refresh_access_token(
 async def register(
     user_in: UserCreate,
     use_case: Annotated[RegisterUser, Depends(RegisterUser)],
+    _: Annotated[None, Depends(DatabaseRateLimiter(requests=5, window=60))],
 ) -> UserRead:
     return await use_case.execute(user_in)
